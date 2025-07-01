@@ -37,9 +37,12 @@ const App = () => {
     if(!exists)
     {
       const request = numberServices.addNumber(personObject)
-      request.then(response => setPersons(persons.concat(response)))
+      request.then(response => {
+        setPersons(persons.concat(response))
+        setNotification(`Added ${newName}`)
+    })
+      .catch(error => setNotification(error.response.data.error))
 
-      setNotification(`Added ${newName}`)
       setTimeout(() => {setNotification('')},5000)
     }
     else

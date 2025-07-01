@@ -8,6 +8,7 @@ const Person = require('./models/person')
 app.use(express.static('dist'))
 app.use(express.json())
 
+//requestLogger
 morgan.token('content',(req,res) => {
   const bodyWithoutId = { ...req.body };
   delete bodyWithoutId.id;
@@ -15,19 +16,31 @@ morgan.token('content',(req,res) => {
 })
 app.use(morgan(':method :url :response-time :content'))
 
+//getting info
+app.get('/api/info',(request,response) => {
+  const date = new Date()
+
+  Person.find({}).then(persons => {
+    console.log("Number of users = ",persons.length," at ",date)
+  })
+})
+
+//Fetching all users
 app.get('/api/persons',(request,response) => {
     Person.find({}).then(persons => {
       response.json(persons)
     })
 })
 
+//Fetching user by id
 app.get('/api/persons/:id',(request,response) => {
   const id = request.params.id
   Person.findById(id).then(person => {
-    request.json(person)
+    
   })
 })
 
+//Deleting a person
 app.delete('/api/persons/:id',(request,response) => {
   const id = request.params.id
 
@@ -37,7 +50,8 @@ app.delete('/api/persons/:id',(request,response) => {
   .catch(error => next(error))
 })
 
-app.post('/api/persons',(request,response) => {
+//adding a new person
+app.post('/api/persons',(request,response,next) => {
   const body = request.body
 
   if(!body) return response.status(400).json({ error: 'Body cannot be empty' })
@@ -47,11 +61,21 @@ app.post('/api/persons',(request,response) => {
     number: body.number,
   })
 
+  let error = person.validateSync()
+  
+  if(error)
+  {
+    console.log("Validation error")
+    next(error)
+  }
+
   person.save().then(savedPerson => {
     response.json(savedPerson)
   })
+  .catch(error => next(error))
 })
 
+//updating an existing person
 app.put('/api/persons/:id',(request,response,next) => {
   const id = request.params.id
   const { name,number } = request.body
@@ -65,9 +89,11 @@ app.put('/api/persons/:id',(request,response,next) => {
     person.name = name
     person.number = number
 
-    return person.save().then(savedPerson => {
+    return person.save()
+      .then(savedPerson => {
       response.json(savedPerson)
-    })
+      })
+      .catch(error => next(error))
   })
   .catch(error => next(error))
 })
@@ -80,13 +106,18 @@ const unknownEndpoint = (request,response) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error,request,response,next) => {
-  if(error === 'CastError')
+  if(error.name === 'CastError')
   {
     return response.status(400).send({
       error : 'malformatted id'
     })
   }
-
+  else if(error.name === 'ValidationError')
+  {
+    return response.status(400).send({
+      error : error.message
+    })
+  }
   next(error)
 }
 app.use(errorHandler)
