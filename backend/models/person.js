@@ -3,11 +3,11 @@ const mongoose = require('mongoose')
 mongoose.set('strictQuery',false)
 
 mongoose.connect(process.env.MONGODB_URI)
-    .then(result => {
-        console.log("Connected to mongodb")
+    .then(() => {
+        console.log('Connected to mongodb')
     })
     .catch(error => {
-        console.log("Error connecting to mongodb",error.message)
+        console.log('Error connecting to mongodb',error.message)
     })
 
 const personSchema = new mongoose.Schema({

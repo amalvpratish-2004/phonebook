@@ -9,19 +9,19 @@ app.use(express.static('dist'))
 app.use(express.json())
 
 //requestLogger
-morgan.token('content',(req,res) => {
-  const bodyWithoutId = { ...req.body };
-  delete bodyWithoutId.id;
+morgan.token('content',(req) => {
+  const bodyWithoutId = { ...req.body }
+  delete bodyWithoutId.id
   return JSON.stringify(bodyWithoutId)
 })
 app.use(morgan(':method :url :response-time :content'))
 
 //getting info
-app.get('/api/info',(request,response) => {
+app.get('/api/info',() => {
   const date = new Date()
 
   Person.find({}).then(persons => {
-    console.log("Number of users = ",persons.length," at ",date)
+    console.log('Number of users = ',persons.length,' at ',date)
   })
 })
 
@@ -36,15 +36,15 @@ app.get('/api/persons',(request,response) => {
 app.get('/api/persons/:id',(request,response) => {
   const id = request.params.id
   Person.findById(id).then(person => {
-    
+    response.json(person)
   })
 })
 
 //Deleting a person
-app.delete('/api/persons/:id',(request,response) => {
+app.delete('/api/persons/:id',(request,response,next) => {
   const id = request.params.id
 
-  Person.findByIdAndDelete(id).then(result => {
+  Person.findByIdAndDelete(id).then(() => {
     response.status(204).end()
   })
   .catch(error => next(error))
@@ -65,7 +65,7 @@ app.post('/api/persons',(request,response,next) => {
   
   if(error)
   {
-    console.log("Validation error")
+    console.log('Validation error')
     next(error)
   }
 
@@ -98,14 +98,14 @@ app.put('/api/persons/:id',(request,response,next) => {
   .catch(error => next(error))
 })
 
-const unknownEndpoint = (request,response) => {
+const unknownEndpoint = (response) => {
   response.status(404).send({
     error: 'unknown endpoint'
   })
 }
 app.use(unknownEndpoint)
 
-const errorHandler = (error,request,response,next) => {
+const errorHandler = (error,response,next) => {
   if(error.name === 'CastError')
   {
     return response.status(400).send({
@@ -124,5 +124,5 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
-    console.log("App is listening on port ",PORT)
+    console.log('App is listening on port ',PORT)
 })
