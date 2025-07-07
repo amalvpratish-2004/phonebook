@@ -3,41 +3,56 @@ const Person = require('../models/person')
 const logger = require('../utils/logger')
 
 //getting info
-personRouter.get('/info',() => {
+personRouter.get('/info',async (response,next) => {
   const date = new Date()
 
-  Person.find({}).then(persons => {
+  try{
+    const persons = await Person.find({})
     logger.info('Number of users = ',persons.length,' at ',date)
-  })
+    response.status(200).json(persons)
+  }
+  catch(exception){
+    next(exception)
+  }
 })
 
 //Fetching all users
-personRouter.get('/',(request,response) => {
-    Person.find({}).then(persons => {
-      response.json(persons)
-    })
+personRouter.get('/',async (request,response,next) => {
+    try{
+      const persons = await Person.find({})
+      response.status(200).json(persons)
+    }
+    catch(exception){
+      next(exception)
+    }
 })
 
 //Fetching user by id
-personRouter.get('/:id',(request,response) => {
+personRouter.get('/:id',async (request,response,next) => {
   const id = request.params.id
-  Person.findById(id).then(person => {
-    response.json(person)
-  })
+  try{
+    const person = await Person.findById(id)
+    response.status(200).json(person)
+  }
+  catch(exception){
+    next(exception)
+  }
 })
 
 //Deleting a person
-personRouter.delete('/:id',(request,response,next) => {
+personRouter.delete('/:id',async (request,response,next) => {
   const id = request.params.id
-
-  Person.findByIdAndDelete(id).then(() => {
+  try{
+    await Person.findByIdAndDelete(id)
     response.status(204).end()
-  })
-  .catch(error => next(error))
+  }
+  catch(exception){
+    next(exception)
+  }
 })
 
 //adding a new person
-personRouter.post('/',(request,response,next) => {
+personRouter.post('/',async (request,response,next) => {
   const body = request.body
 
   if(!body) return response.status(400).json({ error: 'Body cannot be empty' })
@@ -55,18 +70,22 @@ personRouter.post('/',(request,response,next) => {
     next(error)
   }
 
-  person.save().then(savedPerson => {
-    response.json(savedPerson)
-  })
-  .catch(error => next(error))
+  try{
+    const savedPerson = await person.save()
+    response.status(200).json(savedPerson)
+  }
+  catch(exception){
+    next(exception)
+  }
 })
 
 //updating an existing person
-personRouter.put('/:id',(request,response,next) => {
+personRouter.put('/:id',async (request,response,next) => {
   const id = request.params.id
   const { name,number } = request.body
 
-  Person.findById(id).then(person => {
+  try{
+    const person = await Person.findById(id)
     if(!person)
     {
       return response.status(404).end()
@@ -80,8 +99,10 @@ personRouter.put('/:id',(request,response,next) => {
       response.json(savedPerson)
       })
       .catch(error => next(error))
-  })
-  .catch(error => next(error))
+  }
+  catch(exception){
+    next(exception)
+  }
 })
 
 module.exports = personRouter
